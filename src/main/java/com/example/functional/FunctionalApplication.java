@@ -7,6 +7,8 @@ import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -27,12 +29,14 @@ public class FunctionalApplication {
 		ArrayList<Document> dataRestaurants = collection.find().into(new ArrayList<>());
 
 		System.out.println("\n\n------OUTPUT------------\n\n");
-		/* Use this line to remember how the data looks like
-		dataRestaurants.stream().map(Document::toJson).limit(5).forEach(System.out::println);*/
+		// Use this line to remember how the data looks like
+		//dataRestaurants.stream().map(Document::toJson).limit(5).forEach(System.out::println);
 
 		//1: Get the boroughs that start with letter 'B'
 
 		//First we define the condition to use on filter
+
+		/*
 		Predicate<Document> boroughWithB = (restaurant -> restaurant.get("borough").toString().startsWith("B"));
 		//Second we define a function that will received the 'database' and will return a Stream of documents
 		Function<ArrayList<Document>, Stream<Document>> getBoroughs = (dbRest) -> dbRest.stream()
@@ -42,11 +46,15 @@ public class FunctionalApplication {
 		System.out.println("Filter #1");
 
 		resultF1.accept(getBoroughs.apply(dataRestaurants));
+		*/
 
 
 		//2: Get restaurants that have as cuisine 'American'
 
 		//First we define the condition to use on filter
+
+		/*
+
 		Predicate<Document> isAmerica = (data) -> data.get("cuisine").toString().equals("American");
 		//Second we define a function that will received the 'database' and will return a Stream of documents
 		Function<ArrayList<Document>,Stream<Document>> cuisineAmerican = (dbRest) -> dbRest.stream()
@@ -56,10 +64,27 @@ public class FunctionalApplication {
 		System.out.println("Filter #2");
 		resultF2.accept(cuisineAmerican.apply(dataRestaurants));
 
+
+		 */
+
 		//TO DO
 		/*3: Get the amount of restaurants whose name is just one word
 		Keep it in mind that a restaurant e.g McDonals have some locals in different directions and also some records hasn't names assigned
 		HINT: Remember that if the restaurant's name has spaces that means it has more than 1 word*/
+
+		Predicate<String> isNotBlank = (name) -> !name.isBlank();
+		Predicate<String> hasOneWord = (name) -> name.trim().split(" ").length == 1;
+		Predicate<Document> isCountable = (data) -> isNotBlank.test(data.get("name").toString()) && hasOneWord.test(data.get("name").toString());
+
+		Function<ArrayList<Document>,Stream<Document>> restaurantsOneWord = (dbRest) -> dbRest.stream()
+				.filter(r -> isCountable.test(r)).distinct();
+
+		Consumer<Stream<Document>> resultF3 = (value) -> System.out.println("Number of restaurants with one word: " + value.count());
+		System.out.println("Filter #3");
+		resultF3.accept(restaurantsOneWord.apply(dataRestaurants));
+
+
+
 
 		/*4: Get all the restaurants that received grade C in the most recent data
 		HINT: The recent score is always the first one inside the list of the key "grades".*/
