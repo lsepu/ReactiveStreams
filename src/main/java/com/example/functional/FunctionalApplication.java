@@ -5,11 +5,15 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
+import org.bson.json.JsonObject;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.w3c.dom.ls.LSOutput;
 
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -30,7 +34,7 @@ public class FunctionalApplication {
 
 		System.out.println("\n\n------OUTPUT------------\n\n");
 		// Use this line to remember how the data looks like
-		//dataRestaurants.stream().map(Document::toJson).limit(5).forEach(System.out::println);
+		dataRestaurants.stream().map(Document::toJson).limit(5).forEach(System.out::println);
 
 		//1: Get the boroughs that start with letter 'B'
 
@@ -72,6 +76,8 @@ public class FunctionalApplication {
 		Keep it in mind that a restaurant e.g McDonals have some locals in different directions and also some records hasn't names assigned
 		HINT: Remember that if the restaurant's name has spaces that means it has more than 1 word*/
 
+		System.out.println("\n");
+
 		Predicate<String> isNotBlank = (name) -> !name.isBlank();
 		Predicate<String> hasOneWord = (name) -> name.trim().split(" ").length == 1;
 		Predicate<Document> isCountable = (data) -> isNotBlank.test(data.get("name").toString()) && hasOneWord.test(data.get("name").toString());
@@ -83,11 +89,27 @@ public class FunctionalApplication {
 		System.out.println("Filter #3");
 		resultF3.accept(restaurantsOneWord.apply(dataRestaurants));
 
-
-
+		System.out.println("\n");
 
 		/*4: Get all the restaurants that received grade C in the most recent data
 		HINT: The recent score is always the first one inside the list of the key "grades".*/
+
+
+		Predicate<ArrayList<Document>> checkC = (value) -> value.stream().findFirst().get().get("grade").equals("C");
+		Predicate<ArrayList<Document>> checkExists = (value) -> value.stream().findFirst().isPresent();
+
+		Predicate<ArrayList<Document>> receivedCDocument = (data) -> checkExists.test(data) && checkC.test(data);
+
+		Function<ArrayList<Document>, Stream<Document>> restaurantsWithCGrade = (dbRest) -> dbRest.stream()
+				.filter(r -> receivedCDocument.test((ArrayList<Document>) r.get("grades")));
+
+		Consumer<Stream<Document>> resultF4 = (value) -> value.forEach(r -> System.out.println( r.get("name")+" is a restaurant with a recent C grade"));
+
+		System.out.println("Filter #4");
+		resultF4.accept(restaurantsWithCGrade.apply(dataRestaurants));
+
+		System.out.println("\n");
+
 
 		/*5: Sort all the restaurants by the grade that has received in the most recent date. If the are not receiving a grade yet (grade=Not Yet Graded), ignore them.
 		* HINT: Consider create a small Restaurant object with the data that you need to archive this exercise*/
