@@ -13,7 +13,9 @@ import org.w3c.dom.ls.LSOutput;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -95,9 +97,12 @@ public class FunctionalApplication {
 		HINT: The recent score is always the first one inside the list of the key "grades".*/
 
 
+		//check if is in C category
 		Predicate<ArrayList<Document>> checkC = (value) -> value.stream().findFirst().get().get("grade").equals("C");
+		//check if exists
 		Predicate<ArrayList<Document>> checkExists = (value) -> value.stream().findFirst().isPresent();
 
+		//check if exists and in B category
 		Predicate<ArrayList<Document>> receivedCDocument = (data) -> checkExists.test(data) && checkC.test(data);
 
 		Function<ArrayList<Document>, Stream<Document>> restaurantsWithCGrade = (dbRest) -> dbRest.stream()
@@ -114,8 +119,35 @@ public class FunctionalApplication {
 		/*5: Sort all the restaurants by the grade that has received in the most recent date. If the are not receiving a grade yet (grade=Not Yet Graded), ignore them.
 		* HINT: Consider create a small Restaurant object with the data that you need to archive this exercise*/
 
+		//get grade
+		Function<ArrayList<Document>, String> getGrade = (value) -> value.stream().findFirst().get().get("grade").toString();
+
+		//limiting to 5 for testing purposes
+		dataRestaurants.stream()
+				.filter(r -> checkExists.test((ArrayList<Document>) r.get("grades")))
+				.sorted(Comparator.comparing(r -> getGrade.apply((ArrayList<Document>) r.get("grades")))).limit(5).forEach(System.out::println);
+
 
 		//6: Get the restaurant with B category with the highest score
+
+
+
+		//check if is in B category
+	//	Predicate<ArrayList<Document>> checkB = (value) -> value.stream().findFirst().get().get("grade").equals("B");
+
+		//check if in B category and exists
+	/*	Predicate<ArrayList<Document>> receivedBDocument = (data) -> checkExists.test(data) && checkB.test(data);
+
+		Function<ArrayList<Document>, Stream<Document>> restaurantWithBGradeAndHighestScore = (dbRest) -> dbRest.stream()
+				.filter(r -> receivedBDocument.test((ArrayList<Document>) r.get("grades")));
+
+		Consumer<Stream<Document>> resultF6 = (value) -> System.out.println("test: " + value.toString());
+
+		System.out.println("Filter #6");
+		resultF6.accept(restaurantWithBGradeAndHighestScore.apply(dataRestaurants));
+
+		System.out.println("\n"); */
+
 
 		/*7 (Optional): Investigate zip function (import org.springframework.data.util.StreamUtils;) to generate a list of strings with the next elements:
 		-A stream that contains all the names of the restaurant
